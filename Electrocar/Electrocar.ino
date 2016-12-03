@@ -1,49 +1,81 @@
+//
 //Electrocar
+//Firmware for Arduino board on electric car. Communicates with controller via HC-05 BlueTooth Modules.
 //By Zach Rash
+//
 
-#define BT_RX_PIN 0 //BLE pins
-#define BT_TX_PIN 1
-#define LF_PIN 9  //Left motor forward pin
-#define LB_PIN 6  //Left motor backward pin
-#define RF_PIN 5  //Right motor forward pin
-#define RB_PIN 3  //Right motor backward pin
+#define BT_RX_PIN 10 //BlueTooth pins
+#define BT_TX_PIN 7
+
+#define ASpeed 3
+#define BSpeed 11
+#define ABrake 9
+#define BBrake 8
+#define ADir 12
+#define BDir 13
+
+
 
 #include <SoftwareSerial.h>
-SoftwareSerial BTSerial(BT_RX_PIN, BT_TX_PIN);
+SoftwareSerial BTserial(BT_RX_PIN, BT_TX_PIN);
 
-class Robot
-{
-  public:
-
-  void run()
-  {
-    if (BT_RX_PIN == FORWARD) {
-      LF_PIN = RF_Pin = HIGH;
-    }
-    if (BT_RX_PIN == LEFT) {
-      LB_PIN = RF_PIN = HIGH;
-    }
-    if (BT_RX_PIN == RIGHT) {
-      LF_PIN = RB_PIN = HIGH;
-    }
-    if (BT_RX_PIN == BACKWARD) {
-      RB_PIN = LB_PIN = HIGH;
-    }
-    else
-      LF_PIN = RF_PIN = LB_PIN = RB_PIN = LOW;
-  }
-};
-
-Robot electrocar;
+char message;
 
 void setup() {
-  // put your setup code here, to run once:
   Serial.begin(9600);
-  BTSerial.begin(9600);
+  BTserial.begin(38400);
+  pinMode(12, OUTPUT);
+  pinMode(9, OUTPUT);
+  pinMode(13, OUTPUT);
+  pinMode(8, OUTPUT);
 
+  digitalWrite(ABrake, LOW);  // No brakes
+  digitalWrite(BBrake, LOW);
 }
-
 void loop() {
-  // put your main code here, to run repeatedly:
-  electrocar.run();
+  
+  // Check for BT signal.
+  if (BTserial.available() > 0) {
+    message = BTserial.read();
+    Serial.println(message);
+    
+    // Polarities on motor B reversed -> BDir pin LOW = forward
+    if (message == 'F') { 
+      analogWrite(ASpeed, 255);
+      analogWrite(BSpeed, 255);
+      digitalWrite(ADir, HIGH);
+      digitalWrite(BDir, LOW);
+      }
+   
+    else if (message == 'B') {
+      analogWrite(ASpeed, 255);
+      analogWrite(BSpeed, 255);
+      digitalWrite(ADir, LOW);
+      digitalWrite(BDir, HIGH);
+      }
+  
+    else if (message == 'L') {
+      analogWrite(ASpeed, 255);
+      analogWrite(BSpeed, 255);
+      digitalWrite(ADir, HIGH);
+      digitalWrite(BDir, HIGH);
+      }
+  
+   else if (message == 'R') {
+      analogWrite(ASpeed, 255);
+      analogWrite(BSpeed, 255);
+      digitalWrite(ADir, LOW);
+      digitalWrite(BDir, LOW);
+      }
+  
+    else {
+      analogWrite(ASpeed, 0);
+      analogWrite(BSpeed, 0);
+      }
+   
+   }
+  else {
+    analogWrite(ASpeed, 0);
+    analogWrite(BSpeed, 0);
+  }
 }
